@@ -1,0 +1,1164 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xsl:stylesheet version="3.0"
+xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
+<xsl:output method="text"/>
+
+
+<xsl:template match="/">
+
+	<xsl:text>
+tosca_definitions_version: cloudify_dsl_1_3</xsl:text>
+<xsl:text>&#xa;</xsl:text>	
+<xsl:text>imports: ['https://github.com/dice-project/DICE-Deployment-Cloudify/releases/download/0.2.8/fco.yaml','https://github.com/dice-project/DICE-Deployment-Cloudify/releases/download/0.2.8/aws.yaml','https://github.com/dice-project/DICE-Deployment-Cloudify/releases/download/0.2.8/openstack.yaml']</xsl:text>
+
+		
+	<xsl:text>
+outputs:</xsl:text>
+	<xsl:for-each select="//INSTANCE[@class='VMsCluster']">				
+	<xsl:text>&#xa;</xsl:text>	
+	<xsl:text>  </xsl:text>  
+	<xsl:value-of select="@name"/><xsl:text>_ip_output:</xsl:text>
+	<xsl:text>&#xa;</xsl:text>	
+	<xsl:text>    value:</xsl:text>
+	<xsl:text>&#xa;</xsl:text>	
+	<xsl:text>      get_attribute:[</xsl:text><xsl:value-of select="@name"/><xsl:text>, ip]</xsl:text>
+	</xsl:for-each>
+	<xsl:text>&#xa;</xsl:text>	
+	<xsl:text>node_templates:</xsl:text>
+	<xsl:for-each select="//INSTANCE[@class='VMsCluster']">				
+	<xsl:text>&#xa;</xsl:text>	
+	<xsl:text>  </xsl:text>  
+	<xsl:value-of select="@name"/><xsl:text>:</xsl:text>
+	<xsl:text>&#xa;</xsl:text>
+	
+	
+	<xsl:variable name='size1'>
+    <xsl:value-of select="ATTRIBUTE[@name='genericSize']"/>
+    </xsl:variable>
+	
+	<xsl:if test="$size1='Small'">
+	<xsl:text>    type: dice.hosts.Small</xsl:text>
+	</xsl:if>
+	
+	<xsl:if test="$size1='Medium'">
+	<xsl:text>    type: dice.hosts.Medium</xsl:text>
+	</xsl:if>
+	
+	<xsl:if test="$size1='Large'">
+	<xsl:text>    type: dice.hosts.Large</xsl:text>
+	</xsl:if>
+	
+	
+	<xsl:text>&#xa;</xsl:text>	
+	<xsl:text>    instances:{deploy: </xsl:text><xsl:value-of select="ATTRIBUTE[@name='instance']"/> <xsl:text>}</xsl:text>
+	<xsl:text>&#xa;</xsl:text>	
+	<xsl:text>    relationships:</xsl:text>
+	
+    <xsl:variable name='clustername'>
+    <xsl:value-of select="@name"/>
+    </xsl:variable>
+	
+	
+	
+	<xsl:variable name='monitoring1'>
+    <xsl:value-of select="ATTRIBUTE[@name='monitored']"/>
+    </xsl:variable>
+	
+	
+	<xsl:for-each select="//CONNECTOR[@class='Is inside']">
+	<xsl:variable name='component'>
+    <xsl:value-of select="FROM/@instance"/>
+    </xsl:variable>
+	
+	<xsl:if test="TO[@instance=$clustername]">
+	
+	<xsl:variable name='instancer'>
+    <xsl:value-of select="//INSTANCE[@name=$component]/ATTRIBUTE[@name='protected']"/>
+    </xsl:variable>
+	
+	
+	<xsl:if test="$instancer='true'">
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>    - {type: dice.relationships.ProtectedBy, target: </xsl:text> <xsl:value-of select="FROM/@instance"/><xsl:text>_firewall}</xsl:text>
+	</xsl:if>
+	</xsl:if>
+	</xsl:for-each>
+	
+	
+	
+	
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>    - {type: dice.relationships.IPAvailableFrom, target: </xsl:text>	<xsl:value-of select="@name"/><xsl:text>_ip}</xsl:text>
+	<xsl:text>&#xa;</xsl:text>	
+	<xsl:text>    properties:</xsl:text>
+	<xsl:text>&#xa;</xsl:text>	
+    
+	
+	<xsl:if test="$monitoring1='true'">
+	 <xsl:text>      monitoring: {enabled: true} </xsl:text>
+	</xsl:if>
+	
+	<xsl:if test="$monitoring1='false'">
+	<xsl:text>      monitoring: {enabled: false} </xsl:text>
+	</xsl:if>
+	<xsl:text>&#xa;</xsl:text>	
+	
+	<xsl:text>      provider:  </xsl:text> <xsl:value-of select="ATTRIBUTE[@name='providerType']"/>
+	
+	
+	
+	<xsl:text>&#xa;</xsl:text>	
+	<xsl:text>  </xsl:text>	
+	<xsl:value-of select="@name"/><xsl:text>_ip:</xsl:text>
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>    type: dice.VirtualIP</xsl:text>
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>    properties: {}</xsl:text>
+	
+	</xsl:for-each>
+	
+    <xsl:text>&#xa;</xsl:text>	
+	
+	
+	<xsl:for-each select="//INSTANCE[@class='ZooKeeperCluster']">				
+	<xsl:text>&#xa;</xsl:text>	
+	<xsl:text>  </xsl:text>  
+	<xsl:value-of select="@name"/><xsl:text>:</xsl:text>
+	<xsl:text>&#xa;</xsl:text>
+	<xsl:text>    type: dice.components.zookeeper.Server</xsl:text>
+	<xsl:text>&#xa;</xsl:text>	
+	<xsl:text>    relationships:</xsl:text>
+	
+    <xsl:variable name='zookeepername'>
+    <xsl:value-of select="@name"/>
+    </xsl:variable>
+	
+
+	
+	<xsl:for-each select="//CONNECTOR[@class='Is inside']">
+	<xsl:if test="FROM[@instance=$zookeepername]">
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>    - {type: dice.relationships.ContainedIn, target: </xsl:text> <xsl:value-of select="TO/@instance"/><xsl:text>}</xsl:text>
+	</xsl:if>
+	</xsl:for-each>
+	
+	
+	<xsl:variable name='monitoring2'>
+    <xsl:value-of select="ATTRIBUTE[@name='monitored']"/>
+    </xsl:variable>
+	
+	
+	
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>    - {type: dice.relationships.zookeeper.MemberOfQuorum, target: </xsl:text>	<xsl:value-of select="@name"/><xsl:text>_quorum}</xsl:text>
+	<xsl:text>&#xa;</xsl:text>	
+	<xsl:text>    properties:</xsl:text>
+	<xsl:text>&#xa;</xsl:text>	
+    
+	<xsl:if test="$monitoring2='true'">
+	<xsl:text>      monitoring: {enabled: true} </xsl:text>
+	</xsl:if>
+	
+	<xsl:if test="$monitoring2='false'">
+	<xsl:text>      monitoring: {enabled: false} </xsl:text>
+	</xsl:if>
+	
+	<xsl:variable name='zooprotected'>
+    <xsl:value-of select="ATTRIBUTE[@name='protected']"/>
+    </xsl:variable>
+	
+	
+	
+	<xsl:text>&#xa;</xsl:text>	
+	<xsl:if test="$zooprotected='true'">
+	
+	<xsl:text>  </xsl:text>  
+	<xsl:value-of select="@name"/><xsl:text>_firewall:</xsl:text>
+	<xsl:text>&#xa;</xsl:text>	
+	<xsl:text>    type: dice.firewall_rules.zookeeper.Server</xsl:text>
+	<xsl:text>&#xa;</xsl:text>		
+	
+	
+	<xsl:text>    properties: {}</xsl:text>
+	</xsl:if>
+	
+	
+	<xsl:text>&#xa;</xsl:text>	  
+	<xsl:text>  </xsl:text>  
+	<xsl:value-of select="@name"/><xsl:text>_quorum:</xsl:text>
+	<xsl:text>&#xa;</xsl:text>
+	<xsl:text>    type: dice.components.zookeeper.Quorum</xsl:text>
+	<xsl:text>&#xa;</xsl:text>
+	<xsl:text>    relationships:</xsl:text>	
+	
+	
+	<xsl:for-each select="//CONNECTOR[@class='Is inside']">
+	<xsl:if test="FROM[@instance=$zookeepername]">
+	<xsl:text>&#xa;</xsl:text>	
+
+	<xsl:text>    - {type: dice.relationships.zookeeper.QuorumContains, target: </xsl:text> <xsl:value-of select="TO/@instance"/> <xsl:text>}</xsl:text>
+	</xsl:if>
+	</xsl:for-each>
+	
+	
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>    properties: {}</xsl:text>
+	
+	
+	</xsl:for-each>
+	
+	<xsl:for-each select="//INSTANCE[@class='StormCluster']">				
+	<xsl:text>&#xa;</xsl:text>	
+	<xsl:text>  </xsl:text>  
+	<xsl:value-of select="@name"/><xsl:text>_master:</xsl:text>
+	<xsl:text>&#xa;</xsl:text>
+	<xsl:text>    type: dice.components.storm.Nimbus</xsl:text>
+	<xsl:text>&#xa;</xsl:text>	
+	<xsl:text>    relationships:</xsl:text>
+	
+    <xsl:variable name='stormname'>
+    <xsl:value-of select="@name"/>
+    </xsl:variable>
+
+	<xsl:variable name='monitoring3'>
+    <xsl:value-of select="ATTRIBUTE[@name='monitored']"/>
+    </xsl:variable>
+	
+	
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>    - {type: dice.relationships.ContainedIn, target: </xsl:text>	<xsl:value-of select="@name"/><xsl:text>_master_vm}</xsl:text>
+	
+	<xsl:for-each select="//CONNECTOR[@class='StormToZooKeeper']">
+	<xsl:if test="FROM[@instance=$stormname]">
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>    - {type: dice.relationships.storm.ConnectedToZookeeperQuorum, target: </xsl:text> <xsl:value-of select="TO/@instance"/><xsl:text>_quorum}</xsl:text>
+	</xsl:if>
+	</xsl:for-each>
+	<xsl:text>&#xa;</xsl:text>	
+	<xsl:text>    properties:</xsl:text>
+	<xsl:text>&#xa;</xsl:text>	
+  
+  	<xsl:if test="$monitoring3='true'">
+	<xsl:text>      monitoring: {enabled: true} </xsl:text>
+	</xsl:if>
+	
+	<xsl:if test="$monitoring3='false'">
+	<xsl:text>      monitoring: {enabled: false} </xsl:text>
+	</xsl:if>
+	
+	
+  
+  
+	
+	<xsl:text>&#xa;</xsl:text>	
+    <xsl:text>      configuration: {taskTimeout: '</xsl:text> <xsl:value-of select="ATTRIBUTE[@name='taskTimeout']"/> <xsl:text>', supervisorFrequency: '</xsl:text>  <xsl:value-of select="ATTRIBUTE[@name='supervisorFrequency']"/> <xsl:text>'}</xsl:text>
+
+
+	<xsl:text>&#xa;</xsl:text>	
+	<xsl:text>  </xsl:text>
+	<xsl:value-of select="@name"/><xsl:text>:</xsl:text>
+    <xsl:text>&#xa;</xsl:text>
+	<xsl:text>    type: dice.components.storm.Worker</xsl:text>
+	<xsl:text>&#xa;</xsl:text>	
+	<xsl:text>    relationships:</xsl:text>
+	
+	
+    <xsl:variable name='stormname2'>
+    <xsl:value-of select="@name"/>
+    </xsl:variable>
+	
+	<xsl:for-each select="//CONNECTOR[@class='Is inside']">
+	<xsl:if test="FROM[@instance=$stormname2]">
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>    - {type: dice.relationships.ContainedIn, target: </xsl:text> <xsl:value-of select="TO/@instance"/><xsl:text>}</xsl:text>
+	</xsl:if>
+	</xsl:for-each>
+	
+	
+	
+	<xsl:for-each select="//CONNECTOR[@class='StormToZooKeeper']">
+	<xsl:if test="FROM[@instance=$stormname]">
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>    - {type: dice.relationships.storm.ConnectedToZookeeperQuorum, target: </xsl:text> <xsl:value-of select="TO/@instance"/><xsl:text>_quorum}</xsl:text>
+	</xsl:if>
+	</xsl:for-each>
+	
+	
+	
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>    - {type: dice.relationships.storm.ConnectedToNimbus, target: </xsl:text>	<xsl:value-of select="@name"/><xsl:text>_master}</xsl:text>
+	
+	
+	<xsl:text>&#xa;</xsl:text>	
+
+	<xsl:text>    properties:</xsl:text>
+	<xsl:text>&#xa;</xsl:text>	
+  
+
+
+
+  	<xsl:if test="$monitoring3='true'">
+	<xsl:text>      monitoring: {enabled: true} </xsl:text>
+	</xsl:if>
+	
+	<xsl:if test="$monitoring3='false'">
+	<xsl:text>      monitoring: {enabled: false} </xsl:text>
+	</xsl:if>
+	
+	<xsl:variable name='stormprotected'>
+    <xsl:value-of select="ATTRIBUTE[@name='protected']"/>
+    </xsl:variable>
+		
+	<xsl:if test="$stormprotected='true'">
+	
+	
+	<xsl:text>&#xa;</xsl:text>	  
+	<xsl:text>  </xsl:text>  
+	<xsl:value-of select="@name"/><xsl:text>_master_firewall:</xsl:text>
+	<xsl:text>&#xa;</xsl:text>	
+	<xsl:text>    type: dice.firewall_rules.storm.Nimbus</xsl:text>
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>    properties: {}</xsl:text>
+	
+	<xsl:text>&#xa;</xsl:text>	  
+	<xsl:text>  </xsl:text>  
+	<xsl:value-of select="@name"/><xsl:text>_firewall:</xsl:text>
+	<xsl:text>&#xa;</xsl:text>	
+	<xsl:text>    type: dice.firewall_rules.storm.Worker</xsl:text>
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>    properties: {}</xsl:text>
+ 
+    </xsl:if>
+	
+	<xsl:text>&#xa;</xsl:text>	  
+	<xsl:text>  </xsl:text>  
+	<xsl:value-of select="@name"/><xsl:text>_master_vm:</xsl:text>
+	<xsl:text>&#xa;</xsl:text>	
+	
+	
+   
+	<xsl:text>    type: dice.hosts.Large</xsl:text>
+
+
+
+	
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>    instances: {deploy: 1}</xsl:text>
+	
+	<xsl:text>&#xa;</xsl:text>	
+	<xsl:text>    relationships:</xsl:text>
+	
+	<xsl:if test="$stormprotected='true'">
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>    - {type: dice.relationships.ProtectedBy, target: </xsl:text> <xsl:value-of select="@name"/><xsl:text>_master_firewall}</xsl:text>
+	<xsl:text>&#xa;</xsl:text>		
+	</xsl:if>
+	<xsl:text>&#xa;</xsl:text>	
+	<xsl:text>    - {type: dice.relationships.IPAvailableFrom, target: </xsl:text>	<xsl:value-of select="@name"/><xsl:text>_master_vm_ip}</xsl:text>
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>    properties: {}</xsl:text>
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>  </xsl:text>  
+	<xsl:value-of select="@name"/><xsl:text>_master_vm_ip:</xsl:text>
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>    type: dice.VirtualIP</xsl:text>
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>    properties: {}</xsl:text>
+
+	</xsl:for-each>
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<xsl:for-each select="//INSTANCE[@class='CassandraCluster']">				
+	<xsl:text>&#xa;</xsl:text>	
+	<xsl:text>  </xsl:text>  
+	<xsl:value-of select="@name"/><xsl:text>_worker:</xsl:text>
+	<xsl:text>&#xa;</xsl:text>
+	<xsl:text>    type: dice.components.cassandra.Worker</xsl:text>
+	<xsl:text>&#xa;</xsl:text>	
+	<xsl:text>    relationships:</xsl:text>
+	
+    <xsl:variable name='cassname'>
+    <xsl:value-of select="@name"/>
+    </xsl:variable>
+
+	<xsl:variable name='monitoring4'>
+    <xsl:value-of select="ATTRIBUTE[@name='monitored']"/>
+    </xsl:variable>
+	
+	
+
+	
+    <xsl:for-each select="//CONNECTOR[@class='Is inside']">
+	<xsl:if test="FROM[@instance=$cassname]">
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>    - {type: dice.relationships.ContainedIn, target: </xsl:text> <xsl:value-of select="TO/@instance"/><xsl:text>}</xsl:text>
+	</xsl:if>
+	</xsl:for-each>
+	
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>    - {type: dice.relationships.cassandra.ConnectedToSeed, target: </xsl:text>	<xsl:value-of select="@name"/><xsl:text>}</xsl:text>
+
+	<xsl:text>&#xa;</xsl:text>	
+	<xsl:text>    properties:</xsl:text>
+	<xsl:text>&#xa;</xsl:text>	
+  
+  	<xsl:if test="$monitoring4='true'">
+	<xsl:text>      monitoring: {enabled: true} </xsl:text>
+	</xsl:if>
+	
+	<xsl:if test="$monitoring4='false'">
+	<xsl:text>      monitoring: {enabled: false} </xsl:text>
+	</xsl:if>
+	
+	
+	
+	
+	
+	<xsl:variable name='cassprotected'>
+    <xsl:value-of select="ATTRIBUTE[@name='protected']"/>
+    </xsl:variable>
+		
+	<xsl:if test="$cassprotected='true'">
+	
+	
+	<xsl:text>&#xa;</xsl:text>	  
+	<xsl:text>  </xsl:text>  
+	<xsl:value-of select="@name"/><xsl:text>_firewall:</xsl:text>
+	<xsl:text>&#xa;</xsl:text>	
+	<xsl:text>    type: dice.firewall_rules.cassandra.Common</xsl:text>
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>    properties: {}</xsl:text>
+	
+ 
+    </xsl:if>
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<xsl:text>&#xa;</xsl:text>	  
+	<xsl:text>  </xsl:text>  
+	<xsl:value-of select="@name"/><xsl:text>:</xsl:text>
+	<xsl:text>&#xa;</xsl:text>
+	<xsl:text>    type: dice.components.cassandra.Seed</xsl:text>
+	<xsl:text>&#xa;</xsl:text>	
+	<xsl:text>    relationships:</xsl:text>
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>    - {type: dice.relationships.cassandra.ContainedIn, target: </xsl:text>	<xsl:value-of select="@name"/><xsl:text>_seed_vm}</xsl:text>
+	<xsl:text>&#xa;</xsl:text>	
+	<xsl:text>    properties: {}</xsl:text>
+	
+	
+	
+	
+	<xsl:text>&#xa;</xsl:text>	  
+	<xsl:text>  </xsl:text>  
+	<xsl:value-of select="@name"/><xsl:text>_seed_vm:</xsl:text>
+	<xsl:text>&#xa;</xsl:text>	
+	<xsl:text>    type: dice.hosts.Medium</xsl:text>
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>    instances: {deploy: 1}</xsl:text>
+	
+	<xsl:text>&#xa;</xsl:text>	
+	<xsl:text>    relationships:</xsl:text>
+	<xsl:text>&#xa;</xsl:text>	
+	<xsl:text>    - {type: dice.relationships.IPAvailableFrom, target: </xsl:text>	<xsl:value-of select="@name"/><xsl:text>_seed_vm_ip}</xsl:text>
+	
+	
+	
+	<xsl:variable name='cassprotected2'>
+    <xsl:value-of select="ATTRIBUTE[@name='protected']"/>
+    </xsl:variable>
+	
+	
+	<xsl:if test="$cassprotected2='true'">
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>    - {type: dice.relationships.ProtectedBy, target: </xsl:text> <xsl:value-of select="@name"/><xsl:text>_firewall}</xsl:text>
+	</xsl:if>
+	
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>    properties: {}</xsl:text>
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>  </xsl:text>  
+	<xsl:value-of select="@name"/><xsl:text>_seed_vm_ip:</xsl:text>
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>    type: dice.VirtualIP</xsl:text>
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>    properties: {}</xsl:text>
+
+	</xsl:for-each>
+	
+	
+	
+<xsl:for-each select="//INSTANCE[@class='SparkCluster']">				
+	<xsl:text>&#xa;</xsl:text>	
+	<xsl:text>  </xsl:text>  
+	<xsl:value-of select="@name"/><xsl:text>_master:</xsl:text>
+	<xsl:text>&#xa;</xsl:text>
+	<xsl:text>    type: dice.components.spark.Master</xsl:text>
+	<xsl:text>&#xa;</xsl:text>	
+	<xsl:text>    relationships:</xsl:text>
+	
+    <xsl:variable name='sparkname'>
+    <xsl:value-of select="@name"/>
+    </xsl:variable>
+
+	<xsl:variable name='monitoring11'>
+    <xsl:value-of select="ATTRIBUTE[@name='monitored']"/>
+    </xsl:variable>
+	
+	
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>    - {type: dice.relationships.ContainedIn, target: </xsl:text>	<xsl:value-of select="@name"/><xsl:text>_master_vm}</xsl:text>
+	<xsl:text>&#xa;</xsl:text>	
+  
+	
+	<xsl:for-each select="//CONNECTOR[@class='SparkToZooKeeper']">
+	<xsl:if test="FROM[@instance=$sparkname]">		
+	<xsl:text>    - {type: dice.relationships.spark.ConnectedToZookeeperQuorum, target: </xsl:text> <xsl:value-of select="TO/@instance"/><xsl:text>_quorum}</xsl:text>
+	
+	</xsl:if>
+	</xsl:for-each>
+	  
+  
+  
+	<xsl:text>&#xa;</xsl:text>	  
+	<xsl:text>    properties:</xsl:text>
+	<xsl:text>&#xa;</xsl:text>	
+  
+  
+  	<xsl:if test="$monitoring11='true'">
+	<xsl:text>      monitoring: {enabled: true} </xsl:text>
+	</xsl:if>
+	
+	<xsl:if test="$monitoring11='false'">
+	<xsl:text>      monitoring: {enabled: false} </xsl:text>
+	</xsl:if>
+	
+	
+  
+	<xsl:text>&#xa;</xsl:text>	
+	<xsl:text>  </xsl:text>
+	<xsl:value-of select="@name"/><xsl:text>:</xsl:text>
+    <xsl:text>&#xa;</xsl:text>
+	<xsl:text>    type: dice.components.spark.Worker</xsl:text>
+	<xsl:text>&#xa;</xsl:text>	
+	<xsl:text>    relationships:</xsl:text>
+	
+	
+    <xsl:variable name='sparkname2'>
+    <xsl:value-of select="@name"/>
+    </xsl:variable>
+	
+	
+	
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>    - {type: dice.relationships.spark.ConnectedToMaster, target: </xsl:text>	<xsl:value-of select="@name"/><xsl:text>_master}</xsl:text>
+	<xsl:text>&#xa;</xsl:text>	
+	
+	
+	<xsl:for-each select="//CONNECTOR[@class='SparkToZooKeeper']">
+	<xsl:if test="FROM[@instance=$sparkname2]">
+
+	<xsl:text>    - {type: dice.relationships.spark.ConnectedToZookeeperQuorum, target: </xsl:text> <xsl:value-of select="TO/@instance"/><xsl:text>_quorum}</xsl:text>
+	
+	</xsl:if>
+	</xsl:for-each>
+	
+	
+	
+	<xsl:text>&#xa;</xsl:text>	
+	<xsl:for-each select="//CONNECTOR[@class='Is inside']">
+	<xsl:if test="FROM[@instance=$sparkname2]">		
+	<xsl:text>    - {type: dice.relationships.ContainedIn, target: </xsl:text> <xsl:value-of select="TO/@instance"/><xsl:text>}</xsl:text>
+	</xsl:if>
+	</xsl:for-each>
+	<xsl:text>&#xa;</xsl:text>	
+	<xsl:text>    properties:</xsl:text>
+	<xsl:text>&#xa;</xsl:text>	
+  
+
+
+
+  	<xsl:if test="$monitoring11='true'">
+	<xsl:text>      monitoring: {enabled: true} </xsl:text>
+	</xsl:if>
+	
+	<xsl:if test="$monitoring11='false'">
+	<xsl:text>      monitoring: {enabled: false} </xsl:text>
+	</xsl:if>
+	
+	<xsl:variable name='stormprotected'>
+    <xsl:value-of select="ATTRIBUTE[@name='protected']"/>
+    </xsl:variable>
+		
+	<xsl:if test="$stormprotected='true'">
+	
+	
+	<xsl:text>&#xa;</xsl:text>	  
+	<xsl:text>  </xsl:text>  
+	<xsl:value-of select="@name"/><xsl:text>_master_firewall:</xsl:text>
+	<xsl:text>&#xa;</xsl:text>	
+	<xsl:text>    type: dice.firewall_rules.spark.Master</xsl:text>
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>    properties: {}</xsl:text>
+	
+	<xsl:text>&#xa;</xsl:text>	  
+	<xsl:text>  </xsl:text>  
+	<xsl:value-of select="@name"/><xsl:text>_firewall:</xsl:text>
+	<xsl:text>&#xa;</xsl:text>	
+	<xsl:text>    type: dice.firewall_rules.spark.Worker</xsl:text>
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>    properties: {}</xsl:text>
+ 
+    </xsl:if>
+	
+	<xsl:text>&#xa;</xsl:text>	  
+	<xsl:text>  </xsl:text>  
+	<xsl:value-of select="@name"/><xsl:text>_master_vm:</xsl:text>
+	<xsl:text>&#xa;</xsl:text>	
+	
+	
+   
+	<xsl:text>    type: dice.hosts.Medium</xsl:text>
+
+
+
+	
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>    instances: {deploy: 1}</xsl:text>
+	
+	<xsl:text>&#xa;</xsl:text>	
+	<xsl:text>    relationships:</xsl:text>
+	
+	<xsl:if test="$stormprotected='true'">
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>    - {type: dice.relationships.ProtectedBy, target: </xsl:text> <xsl:value-of select="@name"/><xsl:text>_master_firewall}</xsl:text>
+	<xsl:text>&#xa;</xsl:text>		
+	</xsl:if>
+	<xsl:text>&#xa;</xsl:text>	
+	<xsl:text>    - {type: dice.relationships.IPAvailableFrom, target: </xsl:text>	<xsl:value-of select="@name"/><xsl:text>_master_vm_ip}</xsl:text>
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>    properties: {}</xsl:text>
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>  </xsl:text>  
+	<xsl:value-of select="@name"/><xsl:text>_master_vm_ip:</xsl:text>
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>    type: dice.VirtualIP</xsl:text>
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>    properties: {}</xsl:text>
+
+	</xsl:for-each>	
+	
+		
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+<xsl:for-each select="//INSTANCE[@class='HdfsCluster']">				
+	<xsl:text>&#xa;</xsl:text>	
+	<xsl:text>  </xsl:text>  
+	<xsl:value-of select="@name"/><xsl:text>_master:</xsl:text>
+	<xsl:text>&#xa;</xsl:text>
+	<xsl:text>    type: dice.components.hadoop.NameNode</xsl:text>
+	<xsl:text>&#xa;</xsl:text>	
+	<xsl:text>    relationships:</xsl:text>
+	
+    <xsl:variable name='hdfsname'>
+    <xsl:value-of select="@name"/>
+    </xsl:variable>
+
+	<xsl:variable name='monitoring12'>
+    <xsl:value-of select="ATTRIBUTE[@name='monitored']"/>
+    </xsl:variable>
+	
+	
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>    - {type: dice.relationships.ContainedIn, target: </xsl:text>	<xsl:value-of select="@name"/><xsl:text>_master_vm}</xsl:text>
+	<xsl:text>&#xa;</xsl:text>	
+  
+	<xsl:text>    properties:</xsl:text>
+	<xsl:text>&#xa;</xsl:text>	
+  
+  
+  	<xsl:if test="$monitoring12='true'">
+	<xsl:text>      monitoring: {enabled: true} </xsl:text>
+	</xsl:if>
+	
+	<xsl:if test="$monitoring12='false'">
+	<xsl:text>      monitoring: {enabled: false} </xsl:text>
+	</xsl:if>
+	
+	
+  
+	<xsl:text>&#xa;</xsl:text>	
+	<xsl:text>  </xsl:text>
+	<xsl:value-of select="@name"/><xsl:text>:</xsl:text>
+    <xsl:text>&#xa;</xsl:text>
+	<xsl:text>    type: dice.components.hadoop.DataNode</xsl:text>
+	<xsl:text>&#xa;</xsl:text>	
+	<xsl:text>    relationships:</xsl:text>
+	
+	
+    <xsl:variable name='hdfsname2'>
+    <xsl:value-of select="@name"/>
+    </xsl:variable>
+	
+	
+	
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>    - {type: dice.relationships.hadoop.ConnectedToResourceManager, target: </xsl:text>	<xsl:value-of select="@name"/><xsl:text>_master}</xsl:text>
+	<xsl:text>&#xa;</xsl:text>	
+
+	<xsl:for-each select="//CONNECTOR[@class='Is inside']">
+	<xsl:if test="FROM[@instance=$hdfsname2]">		
+	<xsl:text>    - {type: dice.relationships.ContainedIn, target: </xsl:text> <xsl:value-of select="TO/@instance"/><xsl:text>}</xsl:text>
+	</xsl:if>
+	</xsl:for-each>
+	<xsl:text>&#xa;</xsl:text>	
+	<xsl:text>    properties:</xsl:text>
+	<xsl:text>&#xa;</xsl:text>	
+  
+
+
+
+  	<xsl:if test="$monitoring12='true'">
+	<xsl:text>      monitoring: {enabled: true} </xsl:text>
+	</xsl:if>
+	
+	<xsl:if test="$monitoring12='false'">
+	<xsl:text>      monitoring: {enabled: false} </xsl:text>
+	</xsl:if>
+	
+	<xsl:variable name='hdfsprotected'>
+    <xsl:value-of select="ATTRIBUTE[@name='protected']"/>
+    </xsl:variable>
+		
+	<xsl:if test="$hdfsprotected='true'">
+	
+	
+	<xsl:text>&#xa;</xsl:text>	  
+	<xsl:text>  </xsl:text>  
+	<xsl:value-of select="@name"/><xsl:text>_master_firewall:</xsl:text>
+	<xsl:text>&#xa;</xsl:text>	
+	<xsl:text>    type: dice.firewall_rules.hadoop.NameNode</xsl:text>
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>    properties: {}</xsl:text>
+	
+	<xsl:text>&#xa;</xsl:text>	  
+	<xsl:text>  </xsl:text>  
+	<xsl:value-of select="@name"/><xsl:text>_firewall:</xsl:text>
+	<xsl:text>&#xa;</xsl:text>	
+	<xsl:text>    type: dice.firewall_rules.hadoop.DataNode</xsl:text>
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>    properties: {}</xsl:text>
+ 
+    </xsl:if>
+	
+	<xsl:text>&#xa;</xsl:text>	  
+	<xsl:text>  </xsl:text>  
+	<xsl:value-of select="@name"/><xsl:text>_master_vm:</xsl:text>
+	<xsl:text>&#xa;</xsl:text>	
+	
+	
+   
+	<xsl:text>    type: dice.hosts.Medium</xsl:text>
+
+
+
+	
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>    instances: {deploy: 1}</xsl:text>
+	
+	<xsl:text>&#xa;</xsl:text>	
+	<xsl:text>    relationships:</xsl:text>
+	
+	<xsl:if test="$hdfsprotected='true'">
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>    - {type: dice.relationships.ProtectedBy, target: </xsl:text> <xsl:value-of select="@name"/><xsl:text>_master_firewall}</xsl:text>
+	<xsl:text>&#xa;</xsl:text>		
+	</xsl:if>
+	<xsl:text>&#xa;</xsl:text>	
+	<xsl:text>    - {type: dice.relationships.IPAvailableFrom, target: </xsl:text>	<xsl:value-of select="@name"/><xsl:text>_master_vm_ip}</xsl:text>
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>    properties: {}</xsl:text>
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>  </xsl:text>  
+	<xsl:value-of select="@name"/><xsl:text>_master_vm_ip:</xsl:text>
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>    type: dice.VirtualIP</xsl:text>
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>    properties: {}</xsl:text>
+
+	</xsl:for-each>	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+    <xsl:text>&#xa;</xsl:text>	
+    <xsl:for-each select="//INSTANCE[@class='StreamingJob']">		
+    <xsl:text>&#xa;</xsl:text>	
+	<xsl:text>  </xsl:text>  
+	<xsl:value-of select="@name"/><xsl:text>:</xsl:text>
+
+	
+    <xsl:variable name='streamingname'>
+    <xsl:value-of select="@name"/>
+    </xsl:variable>
+	
+	
+	
+	<xsl:for-each select="//CONNECTOR[@class='JobSubmission']">
+	
+	
+	<xsl:if test="FROM[@instance=$streamingname]">
+	<xsl:text>&#xa;</xsl:text>	
+	
+	
+	
+	<xsl:if test="TO[@class='SparkCluster']">
+	<xsl:text>    type: dice.components.spark.Topology</xsl:text>
+	</xsl:if>
+	
+	
+	<xsl:if test="TO[@class='StormCluster']">
+	<xsl:text>    type: dice.components.storm.Topology</xsl:text>
+	</xsl:if>
+	
+	
+	<xsl:text>&#xa;</xsl:text>	
+	
+	
+	
+	
+	
+    </xsl:if>
+	</xsl:for-each>	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<xsl:text>    relationships:</xsl:text>
+	
+	
+	
+	<xsl:for-each select="//CONNECTOR[@class='JobSubmission']">
+	<xsl:if test="FROM[@instance=$streamingname]">
+
+
+
+
+
+	<xsl:for-each select="//CONNECTOR[@class='JobSubmission']">
+	
+	
+	<xsl:if test="FROM[@instance=$streamingname]">
+	<xsl:text>&#xa;</xsl:text>	
+	
+	
+	
+	<xsl:if test="TO[@class='SparkCluster']">
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>    - {type: dice.relationships.spark.SubmittedBy, target: </xsl:text> <xsl:value-of select="TO/@instance"/><xsl:text>_master}</xsl:text>
+	<xsl:text>&#xa;</xsl:text>	
+	</xsl:if>
+	
+	
+	<xsl:if test="TO[@class='StormCluster']">
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>    - {type: dice.relationships.storm.SubmittedBy, target: </xsl:text> <xsl:value-of select="TO/@instance"/><xsl:text>_master}</xsl:text>
+	<xsl:text>&#xa;</xsl:text>		
+	</xsl:if>
+	
+	
+	<xsl:text>&#xa;</xsl:text>	
+	
+	
+	
+	
+	
+    </xsl:if>
+	</xsl:for-each>	
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	</xsl:if>
+	</xsl:for-each>	
+	
+	<xsl:for-each select="//CONNECTOR">
+	<xsl:if test="FROM[@instance=$streamingname]">		
+	<xsl:text>    - {type: dice.relationships.Needs, target: </xsl:text> <xsl:value-of select="TO/@instance"/><xsl:text>}</xsl:text>
+	<xsl:text>&#xa;</xsl:text>		
+    </xsl:if>
+	</xsl:for-each>	
+	
+	
+	
+	
+	<xsl:text>&#xa;</xsl:text>
+	<xsl:text>    properties:</xsl:text>
+	<xsl:text>&#xa;</xsl:text>
+	<xsl:text>      monitoring: {enabled: false} </xsl:text>	
+	<xsl:text>&#xa;</xsl:text>	
+    <xsl:text>      arguments: </xsl:text> <xsl:value-of select="ATTRIBUTE[@name='arguments']"/>
+	<xsl:text>&#xa;</xsl:text>	
+    <xsl:text>      application: </xsl:text> <xsl:value-of select="ATTRIBUTE[@name='artifactLocation']"/>
+	<xsl:text>&#xa;</xsl:text>	
+    <xsl:text>      topology_class: </xsl:text> <xsl:value-of select="ATTRIBUTE[@name='applicationClass']"/>
+	<xsl:text>&#xa;</xsl:text>	
+    <xsl:text>      topology_name: </xsl:text> <xsl:value-of select="ATTRIBUTE[@name='applicationName']"/>
+	</xsl:for-each>
+
+
+
+
+
+    <xsl:text>&#xa;</xsl:text>	
+    <xsl:for-each select="//INSTANCE[@class='BatchJob']">		
+    <xsl:text>&#xa;</xsl:text>	
+	<xsl:text>  </xsl:text>  
+	<xsl:value-of select="@name"/><xsl:text>:</xsl:text>
+	<xsl:text>&#xa;</xsl:text>
+	
+	
+	
+	
+    <xsl:variable name='batchname1'>
+    <xsl:value-of select="@name"/>
+    </xsl:variable>
+		
+	
+
+
+	
+	<xsl:for-each select="//CONNECTOR[@class='JobSubmission']">
+	<xsl:if test="FROM[@instance=$batchname1]">
+	<xsl:text>&#xa;</xsl:text>	
+	
+	<xsl:if test="TO[@class='SparkCluster']">
+	<xsl:text>    type: dice.components.spark.Topology</xsl:text>
+	</xsl:if>
+	
+	
+	
+	<xsl:text>&#xa;</xsl:text>	
+	
+	
+	
+	
+	
+    </xsl:if>
+	</xsl:for-each>	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<xsl:text>    relationships:</xsl:text>
+	
+    <xsl:variable name='batchname'>
+    <xsl:value-of select="@name"/>
+    </xsl:variable>
+	
+	
+	
+
+	
+	
+	<xsl:for-each select="//CONNECTOR[@class='JobSubmission']">
+	<xsl:if test="FROM[@instance=$batchname]">
+	<xsl:text>&#xa;</xsl:text>		
+	<xsl:text>    - {type: dice.relationships.spark.SubmittedBy, target: </xsl:text> <xsl:value-of select="TO/@instance"/><xsl:text>_master}</xsl:text>
+	<xsl:text>&#xa;</xsl:text>	
+    </xsl:if>
+	</xsl:for-each>	
+	
+	<xsl:for-each select="//CONNECTOR">
+	<xsl:if test="FROM[@instance=$batchname]">		
+	<xsl:text>    - {type: dice.relationships.Needs, target: </xsl:text> <xsl:value-of select="TO/@instance"/><xsl:text>}</xsl:text>
+	<xsl:text>&#xa;</xsl:text>		
+    </xsl:if>
+	</xsl:for-each>	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	<xsl:text>&#xa;</xsl:text>
+	<xsl:text>    properties:</xsl:text>
+	<xsl:text>&#xa;</xsl:text>
+	<xsl:text>      monitoring: {enabled: false} </xsl:text>	
+	<xsl:text>&#xa;</xsl:text>	
+    <xsl:text>      arguments: </xsl:text> <xsl:value-of select="ATTRIBUTE[@name='arguments']"/>
+	<xsl:text>&#xa;</xsl:text>	
+    <xsl:text>      application: </xsl:text> <xsl:value-of select="ATTRIBUTE[@name='artifactLocation']"/>
+	<xsl:text>&#xa;</xsl:text>	
+    <xsl:text>      topology_class: </xsl:text> <xsl:value-of select="ATTRIBUTE[@name='applicationClass']"/>
+	<xsl:text>&#xa;</xsl:text>	
+    <xsl:text>      topology_name: </xsl:text> <xsl:value-of select="ATTRIBUTE[@name='applicationName']"/>
+	
+	
+
+	
+	
+
+	</xsl:for-each>
+	
+
+
+
+
+
+	
+	
+	
+	
+
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+
+
+
+
+
+	
+</xsl:template>
+
+
+
+
+</xsl:stylesheet>
